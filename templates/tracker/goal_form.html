@@ -1,0 +1,24 @@
+{% extends "app.html" %}
+{% load fit %}
+{% block title %}{% if goal %}Edit goal{% else %}New goal{% endif %}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{% if goal %}Edit goal{% else %}Set a new goal{% endif %}</h1><p>Counting goals add up everything you log from the start date. Weight goals compare your latest weigh-in with where you started.</p></div></div>
+<form method="post" class="panel form" style="max-width: 640px" novalidate>
+  {% csrf_token %}
+  {% include "partials/form_errors.html" %}
+  {% include "partials/field.html" with field=form.title %}
+  <div class="form-row">
+    {% include "partials/field.html" with field=form.kind %}
+    {% include "partials/field.html" with field=form.target_value %}
+  </div>
+  <div class="form-row">
+    {% include "partials/field.html" with field=form.start_date %}
+    {% include "partials/field.html" with field=form.deadline %}
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">{% if goal %}Save goal{% else %}Create goal{% endif %}</button>
+    <a class="btn btn-ghost" href="{% url 'tracker:goals' %}">Cancel</a>
+    {% if goal %}<a class="btn btn-ghost" href="{% url 'tracker:goal_delete' goal.pk %}" style="margin-left:auto; color: var(--rose)">{% icon "trash" %}Delete</a>{% endif %}
+  </div>
+</form>
+{% endblock %}

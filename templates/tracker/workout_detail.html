@@ -1,0 +1,47 @@
+{% extends "app.html" %}
+{% load fit %}
+{% block title %}{{ workout.title }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div style="display:flex; gap: 1rem; align-items: center">
+    <span class="type-dot" data-type="{{ workout.workout_type }}" style="width:52px; height:52px; border-radius:14px">{% icon workout.workout_type|type_icon "icon-lg" %}</span>
+    <div><h1>{{ workout.title }}</h1><p style="margin-top:.2rem">{{ workout.get_workout_type_display }}, {{ workout.date|date:"l j F Y" }}</p></div>
+  </div>
+  <div class="page-actions">
+    <form method="post" action="{% url 'tracker:workout_repeat' workout.pk %}">{% csrf_token %}<button class="btn btn-secondary" type="submit">{% icon "copy" %}Repeat today</button></form>
+    <a class="btn btn-secondary" href="{% url 'tracker:workout_edit' workout.pk %}">{% icon "edit" %}Edit</a>
+    <a class="btn btn-ghost" href="{% url 'tracker:workout_delete' workout.pk %}" style="color: var(--rose)">{% icon "trash" %}Delete</a>
+  </div>
+</div>
+
+<dl class="stat-row" style="margin-bottom: 1.25rem">
+  <div class="stat"><dt>Duration</dt><dd>{{ workout.duration_min|minutes }}{% if best.longest == workout.duration_min %}<span class="cmp">Your longest {{ workout.get_workout_type_display|lower }}</span>{% endif %}</dd></div>
+  <div class="stat"><dt>Calories</dt><dd>{{ workout.calories_burned|num }} <small>kcal</small><span class="cmp">{% if workout.calories_estimated %}Estimated from your weight{% else %}Entered by you{% endif %}</span></dd></div>
+  <div class="stat"><dt>Intensity</dt><dd>{{ workout.get_intensity_display }}</dd></div>
+  {% if workout.distance_km %}<div class="stat"><dt>Distance</dt><dd>{{ workout.distance_km|smart }} <small>km</small><span class="cmp">Pace {{ workout.pace }}</span></dd></div>{% endif %}
+  {% if workout.exercises.all %}<div class="stat"><dt>Volume lifted</dt><dd>{{ workout.total_volume|num }} <small>kg</small></dd></div>{% endif %}
+</dl>
+
+<div class="grid grid-main">
+  <section class="panel panel-flush">
+    <div class="panel-head"><h2>Exercises</h2></div>
+    {% if workout.exercises.all %}
+    <div class="table-wrap" style="margin-top:.5rem">
+      <table>
+        <thead><tr><th>Exercise</th><th class="num-cell">Sets</th><th class="num-cell">Reps</th><th class="num-cell">Weight</th><th class="num-cell">Volume</th></tr></thead>
+        <tbody>{% for e in workout.exercises.all %}<tr><td><strong>{{ e.name }}</strong></td><td class="num-cell">{{ e.sets }}</td><td class="num-cell">{{ e.reps }}</td><td class="num-cell">{% if e.weight_kg %}{{ e.weight_kg|smart }} kg{% else %}Bodyweight{% endif %}</td><td class="num-cell">{{ e.volume|num }} kg</td></tr>{% endfor %}</tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><span>No exercises recorded for this session.</span><a class="btn btn-secondary btn-sm" href="{% url 'tracker:workout_edit' workout.pk %}">Add exercises</a></div>
+    {% endif %}
+  </section>
+  <section class="panel">
+    <div class="panel-head"><h2>Notes</h2></div>
+    {% if workout.notes %}<p style="white-space: pre-line">{{ workout.notes }}</p>{% else %}<p class="muted">No notes for this workout.</p>{% endif %}
+    <hr>
+    <p class="small muted">Logged {{ workout.created_at|date:"j M Y, H:i" }}{% if workout.updated_at|date:"U" != workout.created_at|date:"U" %}, last edited {{ workout.updated_at|timesince }} ago{% endif %}.</p>
+  </section>
+</div>
+<p style="margin-top: 1.25rem"><a class="btn btn-ghost" href="{% url 'tracker:workouts' %}">{% icon "chevron-left" %}All workouts</a></p>
+{% endblock %}

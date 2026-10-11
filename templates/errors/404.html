@@ -1,0 +1,11 @@
+{% extends "public.html" %}
+{% block title %}Page not found{% endblock %}
+{% block public %}
+<header class="public-nav"><a class="brand" href="/">{% include "partials/brand.html" %}<span class="brand-name">Momentum</span></a></header>
+<div class="error-page"><div>
+  <div class="num">404</div>
+  <h1>This page doesn't exist</h1>
+  <p>The link may be old, or the item may have been deleted. Records you don't own are never shown.</p>
+  <a class="btn btn-primary" href="/">Go to Momentum</a>
+</div></div>
+{% endblock %}

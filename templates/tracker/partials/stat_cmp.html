@@ -1,0 +1,1 @@
+{% load fit %}<div class="stat"><dt>{{ label }}</dt><dd>{{ value|num }}{% if unit %} <small>{{ unit }}</small>{% endif %}<span class="cmp">{% if prev or prev == 0 %}{% if value > prev %}Up from {{ prev|num }}{% elif value < prev %}Down from {{ prev|num }}{% else %}Same as before{% endif %}{% endif %}</span></dd></div>

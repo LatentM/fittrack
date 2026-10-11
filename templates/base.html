@@ -1,0 +1,37 @@
+{% load static fit %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Momentum{% endblock %} | Momentum</title>
+  <meta name="description" content="Momentum: track workouts, meals, body stats and daily habits in one place.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%232f5bff'/%3E%3Crect x='8' y='17' width='4' height='7' rx='2' fill='%23fff' opacity='.55'/%3E%3Crect x='14' y='12.5' width='4' height='11.5' rx='2' fill='%23fff' opacity='.8'/%3E%3Crect x='20' y='8' width='4' height='16' rx='2' fill='%23f0a020'/%3E%3C/svg%3E">
+  <script>
+    (function () {
+      try { var t = localStorage.getItem("momentum-theme"); if (t) document.documentElement.setAttribute("data-theme", t); } catch (e) {}
+    })();
+  </script>
+  <link rel="preload" href="{% static 'fonts/manrope-latin-400-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{% static 'fonts/unbounded-latin-600-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  {% include "partials/icons.html" %}
+  {% block body %}{% endblock %}
+
+  {% if messages %}
+  <div class="toasts" role="status" aria-live="polite">
+    {% for message in messages %}
+    <div class="toast toast-{{ message.tags }}">
+      {% if message.tags == "error" %}{% icon "alert" %}{% elif message.tags == "success" %}{% icon "check" %}{% else %}{% icon "info" %}{% endif %}
+      <span>{{ message }}</span>
+      <button type="button" data-dismiss aria-label="Dismiss">{% icon "x" %}</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% block scripts %}{% endblock %}
+  <script src="{% static 'js/app.js' %}" defer></script>
+</body>
+</html>

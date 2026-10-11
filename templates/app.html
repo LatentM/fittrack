@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% load fit %}
+{% block body %}
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+    <a class="brand" href="{% url 'tracker:dashboard' %}">{% include "partials/brand.html" %}<span class="brand-name">Momentum</span></a>
+    <nav class="nav">
+      {% for name, label, ic in nav_items %}
+      <a href="{% url name %}"{% if nav_current == name %} aria-current="page"{% endif %}>{% icon ic %}{{ label }}</a>
+      {% endfor %}
+    </nav>
+    <div class="sidebar-foot">
+      <a class="user-chip" href="{% url 'accounts:settings' %}"{% if nav_current == "accounts:settings" %} aria-current="page"{% endif %}>
+        <span class="avatar">{{ user|initials }}</span>
+        <span><strong>{{ user.get_full_name|default:user.username }}</strong><span>Profile and settings</span></span>
+      </a>
+      <div class="sidebar-actions">
+        <button class="btn btn-ghost btn-sm" type="button" data-theme-toggle aria-label="Switch colour theme">{% icon "moon" %}<span data-theme-label>Theme</span></button>
+        <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button class="btn btn-ghost btn-sm" type="submit">{% icon "logout" %}Sign out</button></form>
+      </div>
+    </div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <button class="btn btn-secondary btn-icon menu-btn" type="button" data-nav-toggle aria-controls="sidebar" aria-expanded="false" aria-label="Open menu">{% icon "menu" %}</button>
+      <span class="date">{{ today|date:"l, j F" }}</span>
+      <span class="topbar-spacer"></span>
+      <details class="quicklog">
+        <summary class="btn btn-primary">{% icon "plus" %}Log</summary>
+        <div class="quicklog-menu">
+          <a href="{% url 'tracker:workout_new' %}">{% icon "dumbbell" "icon-lg" %}<div>Workout<span>Sets, runs, sessions</span></div></a>
+          <a href="{% url 'tracker:meal_new' %}">{% icon "bowl" "icon-lg" %}<div>Meal<span>Calories and macros</span></div></a>
+          <a href="{% url 'tracker:body' %}#log-weight">{% icon "scale" "icon-lg" %}<div>Weight<span>Body measurements</span></div></a>
+          <a href="{% url 'tracker:habits' %}">{% icon "steps" "icon-lg" %}<div>Daily check-in<span>Steps, sleep, water</span></div></a>
+        </div>
+      </details>
+    </header>
+    <main class="content" id="main">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endblock %}

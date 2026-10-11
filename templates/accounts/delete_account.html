@@ -1,0 +1,10 @@
+{% extends "app.html" %}
+{% block title %}Delete account{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Delete your account</h1><p>This permanently removes your account and all of its data. It can't be undone.</p></div></div>
+<form method="post" class="panel form danger-zone" style="max-width: 520px" novalidate>
+  {% csrf_token %}
+  {% include "partials/field.html" with field=form.password %}
+  <div class="form-actions"><button class="btn btn-danger" type="submit">Delete account and data</button><a class="btn btn-ghost" href="{% url 'accounts:settings' %}">Keep my account</a></div>
+</form>
+{% endblock %}

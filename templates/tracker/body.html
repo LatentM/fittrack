@@ -1,0 +1,73 @@
+{% extends "app.html" %}
+{% load fit static %}
+{% block title %}Body{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Body</h1><p>Weigh in at the same time of day, ideally in the morning, for a trend you can trust.</p></div></div>
+
+<dl class="stat-row" style="margin-bottom: 1.25rem">
+  <div class="stat"><dt>Current weight</dt><dd>{% if latest %}{{ latest.weight_kg|smart }} <small>kg</small>{% else %}–{% endif %}</dd></div>
+  <div class="stat"><dt>Change since start</dt><dd>{% if change_total is not None %}<span class="{% if change_total < 0 %}delta-down{% elif change_total > 0 %}delta-up{% endif %}">{{ change_total|signed }}</span> <small>kg since {{ first.date|date:"j M" }}</small>{% else %}–{% endif %}</dd></div>
+  <div class="stat"><dt>BMI</dt><dd>{{ profile.bmi|default:"–" }}{% if profile.bmi_category %} <small>{{ profile.bmi_category }}</small>{% endif %}<span class="cmp">Asian cut-offs: 18.5–22.9 healthy</span></dd></div>
+  <div class="stat"><dt>Daily burn (TDEE)</dt><dd>{% if profile.tdee %}{{ profile.tdee|num }} <small>kcal</small>{% else %}–{% endif %}<span class="cmp">{% if profile.bmr %}BMR {{ profile.bmr|num }} kcal{% else %}Complete your profile{% endif %}</span></dd></div>
+</dl>
+
+<div class="grid grid-form">
+  <div class="stack">
+    <section class="panel">
+      <div class="panel-head"><h2>Weight trend</h2><p>Last 12 months</p></div>
+      <div class="chart-box"><canvas id="chart-weight-long" role="img" aria-label="Line chart of your weight over the last year"></canvas></div>
+    </section>
+    <section class="panel panel-flush">
+      <div class="panel-head"><h2>History</h2><a class="small" href="{% url 'tracker:export' 'measurements' %}">Export CSV</a></div>
+      {% if rows %}
+      <div class="table-wrap" style="margin-top:.5rem">
+        <table>
+          <thead><tr><th>Date</th><th class="num-cell">Weight</th><th class="num-cell">Change</th><th class="num-cell">Body fat</th><th class="num-cell">Waist</th><th class="num-cell">Resting HR</th><th><span class="sr-only">Actions</span></th></tr></thead>
+          <tbody>
+            {% for r in rows %}{% if show_all or forloop.counter <= 20 %}
+            <tr>
+              <td style="white-space:nowrap">{{ r.date|date:"D j M Y" }}{% if r.notes %}<br><span class="muted small">{{ r.notes }}</span>{% endif %}</td>
+              <td class="num-cell"><strong>{{ r.weight_kg|smart }} kg</strong></td>
+              <td class="num-cell">{% if r.change is not None %}<span class="{% if r.change < 0 %}delta-down{% elif r.change > 0 %}delta-up{% else %}muted{% endif %}">{{ r.change|signed }}</span>{% else %}<span class="muted">–</span>{% endif %}</td>
+              <td class="num-cell">{% if r.body_fat_pct %}{{ r.body_fat_pct|smart }}%{% else %}<span class="muted">–</span>{% endif %}</td>
+              <td class="num-cell">{% if r.waist_cm %}{{ r.waist_cm|smart }} cm{% else %}<span class="muted">–</span>{% endif %}</td>
+              <td class="num-cell">{% if r.resting_hr %}{{ r.resting_hr }} bpm{% else %}<span class="muted">–</span>{% endif %}</td>
+              <td><div class="row-actions">
+                <a class="btn btn-ghost btn-sm btn-icon" href="{% url 'tracker:measurement_edit' r.pk %}" aria-label="Edit entry for {{ r.date|date:'j M' }}">{% icon "edit" %}</a>
+                <a class="btn btn-ghost btn-sm btn-icon" href="{% url 'tracker:measurement_delete' r.pk %}" aria-label="Delete entry for {{ r.date|date:'j M' }}">{% icon "trash" %}</a>
+              </div></td>
+            </tr>
+            {% endif %}{% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if total_entries > 20 %}<div class="pagination"><span class="muted">{% if show_all %}Showing all {{ total_entries }} entries{% else %}Showing the latest 20 of {{ total_entries }}{% endif %}</span>{% if show_all %}<a class="btn btn-secondary btn-sm" href="{% url 'tracker:body' %}">Show fewer</a>{% else %}<a class="btn btn-secondary btn-sm" href="?all=1">Show all</a>{% endif %}</div>{% endif %}
+      {% else %}
+      <div class="empty"><strong>No measurements yet</strong><span>Log your weight to start the trend line.</span></div>
+      {% endif %}
+    </section>
+  </div>
+
+  <section class="panel" id="log-weight">
+    <div class="panel-head"><h2>Log a measurement</h2></div>
+    {% if existing_today %}<p class="small muted" style="margin-bottom:.9rem">You've already logged {{ existing_today.weight_kg|smart }} kg today. <a href="{% url 'tracker:measurement_edit' existing_today.pk %}">Edit it</a> or pick another date.</p>{% endif %}
+    <form method="post" class="form" novalidate>
+      {% csrf_token %}
+      {% include "partials/form_errors.html" %}
+      <div class="form-row">
+        {% include "partials/field.html" with field=form.date %}
+        {% include "partials/field.html" with field=form.weight_kg %}
+      </div>
+      <div class="form-row">
+        {% include "partials/field.html" with field=form.body_fat_pct %}
+        {% include "partials/field.html" with field=form.waist_cm %}
+      </div>
+      {% include "partials/field.html" with field=form.resting_hr %}
+      {% include "partials/field.html" with field=form.notes %}
+      <button class="btn btn-primary btn-block" type="submit">Save measurement</button>
+    </form>
+  </section>
+</div>
+<script type="application/json" id="chart-data">{{ chart|safe }}</script>
+{% endblock %}
+{% block scripts %}<script src="{% static 'vendor/chart.umd.js' %}" defer></script>{% endblock %}

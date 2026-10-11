@@ -1,0 +1,19 @@
+{% extends "accounts/auth_base.html" %}
+{% block title %}Sign in{% endblock %}
+{% block card %}
+<h1>Welcome back</h1>
+<p>Sign in with your username or email.</p>
+<form method="post" class="form" novalidate>
+  {% csrf_token %}
+  {% include "partials/form_errors.html" %}
+  {% include "partials/field.html" with field=form.username %}
+  <div class="field{% if form.password.errors %} has-error{% endif %}">
+    <div class="field-line"><label for="{{ form.password.id_for_label }}">Password</label><a class="small" href="{% url 'accounts:password_reset' %}">Forgot password?</a></div>
+    <div class="pw-wrap">{{ form.password }}<button type="button" class="pw-toggle" data-pw-toggle aria-label="Show password"><svg class="icon" aria-hidden="true"><use href="#i-eye"></use></svg></button></div>
+  </div>
+  {% include "partials/field.html" with field=form.remember_me %}
+  <input type="hidden" name="next" value="{{ next }}">
+  <button class="btn btn-primary btn-lg btn-block" type="submit"{% if locked %} disabled{% endif %}>Sign in</button>
+</form>
+<p class="auth-alt">New to Momentum? <a href="{% url 'accounts:signup' %}">Create an account</a></p>
+{% endblock %}

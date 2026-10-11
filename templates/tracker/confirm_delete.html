@@ -1,0 +1,10 @@
+{% extends "app.html" %}
+{% block title %}Delete {{ kind }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Delete this {{ kind }}?</h1><p>“{{ object }}” will be removed permanently.</p></div></div>
+<form method="post" class="panel form" style="max-width: 520px">
+  {% csrf_token %}
+  <p>This can't be undone.</p>
+  <div class="form-actions"><button class="btn btn-danger" type="submit">Delete {{ kind }}</button><a class="btn btn-ghost" href="{{ cancel_url }}">Keep it</a></div>
+</form>
+{% endblock %}

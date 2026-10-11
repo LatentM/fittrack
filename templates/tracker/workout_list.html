@@ -1,0 +1,61 @@
+{% extends "app.html" %}
+{% load fit %}
+{% block title %}Workouts{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Workouts</h1><p>{{ totals.count }} workout{{ totals.count|pluralize }}{% if filtered %} match your filters{% endif %}, {{ totals.minutes|minutes }} and {{ totals.kcal|num }} kcal in total.</p></div>
+  <div class="page-actions"><a class="btn btn-primary" href="{% url 'tracker:workout_new' %}">{% icon "plus" %}Log workout</a></div>
+</div>
+
+<section class="panel panel-flush">
+  <form class="filters" method="get" role="search">
+    <div class="field field-search"><label for="f-q">Search</label><input id="f-q" type="search" name="q" value="{{ filters.q }}" placeholder="Title, notes or exercise"></div>
+    <div class="field"><label for="f-type">Type</label>
+      <select id="f-type" name="type"><option value="">All types</option>{% for value, label in types %}<option value="{{ value }}"{% if filters.type == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+    </div>
+    <div class="field"><label for="f-from">From</label><input id="f-from" type="date" name="from" value="{{ filters.from }}"></div>
+    <div class="field"><label for="f-to">To</label><input id="f-to" type="date" name="to" value="{{ filters.to }}"></div>
+    <button class="btn btn-secondary" type="submit">{% icon "search" %}Apply</button>
+    {% if filtered %}<a class="btn btn-ghost" href="{% url 'tracker:workouts' %}">Clear</a>{% endif %}
+  </form>
+
+  {% if page.object_list %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Workout</th><th>Date</th><th class="num-cell">Time</th><th class="num-cell">Distance</th><th class="num-cell">Calories</th><th><span class="sr-only">Actions</span></th></tr></thead>
+      <tbody>
+        {% for w in page.object_list %}
+        <tr>
+          <td>
+            <a href="{{ w.get_absolute_url }}" style="display:flex; align-items:center; gap:.75rem; color: inherit; text-decoration: none">
+              <span class="type-dot" data-type="{{ w.workout_type }}">{% icon w.workout_type|type_icon %}</span>
+              <span><strong>{{ w.title }}</strong><br><span class="muted small">{{ w.get_workout_type_display }}, {{ w.get_intensity_display|lower }}{% if w.exercises.all %}, {{ w.exercises.all|length }} exercise{{ w.exercises.all|length|pluralize }}{% endif %}</span></span>
+            </a>
+          </td>
+          <td style="white-space: nowrap">{{ w.date|date:"D j M Y" }}</td>
+          <td class="num-cell">{{ w.duration_min|minutes }}</td>
+          <td class="num-cell">{% if w.distance_km %}{{ w.distance_km|smart }} km{% else %}<span class="muted">–</span>{% endif %}</td>
+          <td class="num-cell">{{ w.calories_burned|num }}</td>
+          <td><div class="row-actions">
+            <a class="btn btn-ghost btn-sm btn-icon" href="{% url 'tracker:workout_edit' w.pk %}" aria-label="Edit {{ w.title }}">{% icon "edit" %}</a>
+            <a class="btn btn-ghost btn-sm btn-icon" href="{% url 'tracker:workout_delete' w.pk %}" aria-label="Delete {{ w.title }}">{% icon "trash" %}</a>
+          </div></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if page.paginator.num_pages > 1 %}
+  <nav class="pagination" aria-label="Pages">
+    {% if page.has_previous %}<a class="btn btn-secondary btn-sm" href="?{{ querystring }}{% if querystring %}&{% endif %}page={{ page.previous_page_number }}">{% icon "chevron-left" %}Newer</a>{% else %}<span></span>{% endif %}
+    <span class="muted">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a class="btn btn-secondary btn-sm" href="?{{ querystring }}{% if querystring %}&{% endif %}page={{ page.next_page_number }}">Older{% icon "chevron-right" %}</a>{% else %}<span></span>{% endif %}
+  </nav>
+  {% endif %}
+  {% elif filtered %}
+  <div class="empty"><strong>No workouts match these filters</strong><span>Try a wider date range or a different type.</span><a class="btn btn-secondary btn-sm" href="{% url 'tracker:workouts' %}">Clear filters</a></div>
+  {% else %}
+  <div class="empty"><strong>Your training log is empty</strong><span>Log a gym session, a run, a yoga class or a game of cricket.</span><a class="btn btn-primary btn-sm" href="{% url 'tracker:workout_new' %}">Log your first workout</a></div>
+  {% endif %}
+</section>
+{% endblock %}

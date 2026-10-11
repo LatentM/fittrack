@@ -1,0 +1,28 @@
+{% extends "public.html" %}
+{% load fit %}
+{% block title %}Set up your profile{% endblock %}
+{% block public %}
+<header class="public-nav">
+  <span class="brand">{% include "partials/brand.html" %}<span class="brand-name">Momentum</span></span>
+  <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button class="btn btn-ghost" type="submit">Sign out</button></form>
+</header>
+<div class="onboard">
+  <h1>Hi {{ user.first_name|default:user.username }}, let's set your targets</h1>
+  <p class="muted" style="margin: .6rem 0 1.75rem">Your age, height and weight let Momentum estimate how many calories you burn each day and set your food target. You can change any of this later in settings.</p>
+  <form method="post" class="panel form" novalidate>
+    {% csrf_token %}
+    {% include "partials/form_errors.html" %}
+    <div class="form-row">
+      {% include "partials/field.html" with field=form.date_of_birth %}
+      {% include "partials/field.html" with field=form.sex %}
+    </div>
+    <div class="form-row">
+      {% include "partials/field.html" with field=form.height_cm hide_help=True %}
+      {% include "partials/field.html" with field=form.starting_weight %}
+    </div>
+    {% include "partials/field.html" with field=form.activity_level %}
+    {% include "partials/field.html" with field=form.objective %}
+    <div class="form-actions"><button class="btn btn-primary btn-lg" type="submit">Calculate my targets</button></div>
+  </form>
+</div>
+{% endblock %}

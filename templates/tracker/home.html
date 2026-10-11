@@ -1,0 +1,89 @@
+{% extends "public.html" %}
+{% load fit %}
+{% block title %}Track the habit, not just the workout{% endblock %}
+{% block public %}
+<header class="public-nav">
+  <a class="brand" href="{% url 'tracker:home' %}">{% include "partials/brand.html" %}<span class="brand-name">Momentum</span></a>
+  <nav>
+    <button class="btn btn-ghost btn-icon" type="button" data-theme-toggle aria-label="Switch colour theme">{% icon "moon" %}</button>
+    <a class="btn btn-ghost" href="{% url 'accounts:login' %}">Sign in</a>
+    <a class="btn btn-primary" href="{% url 'accounts:signup' %}">Create account</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <div>
+    <h1>Show up today. Watch it add up.</h1>
+    <p class="hero-lede">Momentum keeps your workouts, meals, weight, steps, sleep and water in one place, then shows you the thing that actually changes bodies: how consistently you turn up.</p>
+    <div class="hero-cta">
+      <a class="btn btn-primary btn-lg" href="{% url 'accounts:signup' %}">Start tracking for free</a>
+      <a class="btn btn-secondary btn-lg" href="{% url 'accounts:login' %}">I already have an account</a>
+    </div>
+    <p class="hero-note">Takes a minute to set up. Your data stays private to your account, and you can export or delete it any time.</p>
+  </div>
+
+  <div class="hero-visual" aria-hidden="true">
+    <div class="band">
+      <div class="band-streak">
+        <div>
+          <div class="big">23</div>
+          <div class="big-label">day streak</div>
+        </div>
+        <div class="band-stats">
+          <div><strong>61</strong>active days</div>
+          <div><strong>48 h</strong>trained</div>
+          <div><strong>−4.2 kg</strong>since June</div>
+        </div>
+      </div>
+      <div class="band-grid-wrap">
+        <div class="heat">
+          <div class="heat-days"><span>M</span><span></span><span>W</span><span></span><span>F</span><span></span><span>S</span></div>
+          <div class="heat-cols">
+            {% for col in demo_columns %}
+            <div class="heat-col">{% for cell in col %}<span class="heat-cell" data-l="{{ cell.level }}" style="--i: {{ cell.i }}"></span>{% endfor %}</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="features" aria-label="What you can track">
+  <div class="feature">
+    <span class="type-dot">{% icon "dumbbell" "icon-lg" %}</span>
+    <h2>Workouts with real detail</h2>
+    <p>Log sets, reps and weight for gym days, or distance and pace for runs and rides. Calories are estimated from your weight when you don't have a watch.</p>
+  </div>
+  <div class="feature">
+    <span class="type-dot" data-type="hiit">{% icon "bowl" "icon-lg" %}</span>
+    <h2>Food you actually eat</h2>
+    <p>Idli, dosa, dal, biryani and more are one tap away, with protein, carbs and fat tracked against a target calculated from your body.</p>
+  </div>
+  <div class="feature">
+    <span class="type-dot" data-type="running">{% icon "flag" "icon-lg" %}</span>
+    <h2>Goals that check themselves</h2>
+    <p>Set a target weight, a distance or a workout count with a deadline. Momentum tracks progress and tells you whether you're on pace.</p>
+  </div>
+  <div class="feature">
+    <span class="type-dot" data-type="yoga">{% icon "steps" "icon-lg" %}</span>
+    <h2>Daily habits</h2>
+    <p>A quick check-in for steps, sleep and mood, and one-tap water logging, so the small things get counted too.</p>
+  </div>
+  <div class="feature">
+    <span class="type-dot">{% icon "chart" "icon-lg" %}</span>
+    <h2>Reports you can take away</h2>
+    <p>Compare any period with the one before it, see where your training time goes, and export everything to CSV for Excel.</p>
+  </div>
+  <div class="feature">
+    <span class="type-dot" data-type="running">{% icon "lock" "icon-lg" %}</span>
+    <h2>Secure by default</h2>
+    <p>Hashed passwords, protection against repeated sign-in attempts, password reset by email, and every record locked to your own account.</p>
+  </div>
+</section>
+
+<footer class="public-foot">
+  <span>Momentum fitness tracker</span>
+  <span>Built with Django</span>
+</footer>
+{% endblock %}

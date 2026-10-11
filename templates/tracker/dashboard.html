@@ -1,0 +1,155 @@
+{% extends "app.html" %}
+{% load fit static %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ greeting }}, {{ user.first_name|default:user.username }}</h1>
+    <p>{% if week.done >= week.target %}You've hit your {{ week.target }} workouts for this week. Anything more is a bonus.{% elif week.done %}{{ week.done }} of {{ week.target }} workouts done this week, {{ week.remaining }} to go.{% else %}No workouts yet this week. A short walk counts.{% endif %}</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-secondary" href="{% url 'tracker:meal_new' %}">{% icon "bowl" %}Log meal</a>
+    <a class="btn btn-primary" href="{% url 'tracker:workout_new' %}">{% icon "dumbbell" %}Log workout</a>
+  </div>
+</div>
+
+<div class="stack">
+  {# The momentum band: streak + 26-week consistency grid #}
+  <section class="band" aria-labelledby="band-title">
+    <div class="band-streak">
+      <div>
+        <div class="big" aria-describedby="streak-label">{{ streak.current }}</div>
+        <div class="big-label" id="streak-label">day streak{% if streak.best > streak.current %}, best {{ streak.best }}{% endif %}</div>
+      </div>
+      <div class="band-stats">
+        <div><strong>{{ heat.active_days }}</strong>active days</div>
+        <div><strong>{{ heat.total_minutes|minutes }}</strong>trained</div>
+      </div>
+    </div>
+    <div class="band-grid-wrap">
+      <div class="band-grid-head">
+        <h2 id="band-title">Training calendar</h2>
+        <div class="heat-legend" aria-hidden="true">Less <span class="heat-cell"></span><span class="heat-cell" data-l="1"></span><span class="heat-cell" data-l="2"></span><span class="heat-cell" data-l="3"></span><span class="heat-cell" data-l="4"></span> More</div>
+      </div>
+      <div class="heat-months" aria-hidden="true">{% for col in heat.columns %}<span>{{ col.month }}</span>{% endfor %}</div>
+      <div class="heat" role="img" aria-label="Training calendar: {{ heat.active_days }} active days in the last 26 weeks">
+        <div class="heat-days" aria-hidden="true"><span>M</span><span></span><span>W</span><span></span><span>F</span><span></span><span>S</span></div>
+        <div class="heat-cols">
+          {% for col in heat.columns %}
+          <div class="heat-col">
+            {% for cell in col.days %}<span class="heat-cell{% if cell.future %} future{% endif %}{% if cell.date == today %} today{% endif %}" data-l="{{ cell.level }}" title="{{ cell.date|date:'D j M' }}: {% if cell.minutes %}{{ cell.minutes|minutes }}{% else %}rest{% endif %}"></span>{% endfor %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# Today at a glance #}
+  <section class="today-strip" aria-label="Today">
+    <div class="metric">
+      <span class="metric-label">{% icon "bowl" %}Eaten</span>
+      <span class="metric-value">{{ summary.calories_in|num }} <small>/ {{ calorie_target|num }} kcal</small></span>
+      <div class="bar{% if summary.calories_in > calorie_target %} bar-over{% endif %}"><span style="--w: {{ pct_calories }}%"></span></div>
+      <span class="metric-foot">{% if calories_left >= 0 %}{{ calories_left|num }} kcal left including exercise{% else %}{{ calories_left|abs|num }} kcal over, including exercise{% endif %}</span>
+    </div>
+    <div class="metric metric-energy">
+      <span class="metric-label">{% icon "flame" %}Burned in workouts</span>
+      <span class="metric-value">{{ summary.calories_burned|num }} <small>kcal</small></span>
+      <div class="bar bar-amber"><span style="--w: {{ summary.minutes|percent_of:60 }}%"></span></div>
+      <span class="metric-foot">{% if summary.workouts %}{{ summary.minutes|minutes }} across {{ summary.workouts }} workout{{ summary.workouts|pluralize }}{% else %}Nothing logged today yet{% endif %}</span>
+    </div>
+    <div class="metric">
+      <span class="metric-label">{% icon "drop" %}Water</span>
+      <span class="metric-value">{{ summary.water_ml|num }} <small>/ {{ profile.water_target_ml|num }} ml</small></span>
+      <div class="bar bar-teal"><span style="--w: {{ pct_water }}%"></span></div>
+      <form method="post" action="{% url 'tracker:water_add' %}" style="display:flex; gap:.35rem; flex-wrap: wrap">
+        {% csrf_token %}
+        <button class="btn btn-secondary btn-sm" name="amount_ml" value="250" type="submit">+250 ml</button>
+        <button class="btn btn-secondary btn-sm" name="amount_ml" value="500" type="submit">+500 ml</button>
+      </form>
+    </div>
+    <div class="metric">
+      <span class="metric-label">{% icon "steps" %}Steps</span>
+      <span class="metric-value">{{ summary.steps|num }} <small>/ {{ profile.steps_target|num }}</small></span>
+      <div class="bar"><span style="--w: {{ pct_steps }}%"></span></div>
+      <a class="metric-foot" href="{% url 'tracker:habits' %}">{% if summary.log %}Update today's check-in{% else %}Add today's steps and sleep{% endif %}</a>
+    </div>
+  </section>
+
+  <div class="grid grid-main">
+    <div class="stack">
+      <section class="panel">
+        <div class="panel-head"><h2>Calories, last 7 days</h2><p>Eaten vs burned in workouts</p></div>
+        <div class="chart-box"><canvas id="chart-energy" aria-label="Bar chart of calories eaten and burned over the last 7 days" role="img"></canvas></div>
+      </section>
+
+      <section class="panel panel-flush">
+        <div class="panel-head"><h2>Recent workouts</h2><a class="small" href="{% url 'tracker:workouts' %}">See all</a></div>
+        {% if recent_workouts %}
+        <ul class="list" style="margin-top:.6rem">
+          {% for w in recent_workouts %}
+          <li><a class="list-row list-row-link" href="{{ w.get_absolute_url }}">
+            <span class="type-dot" data-type="{{ w.workout_type }}">{% icon w.workout_type|type_icon %}</span>
+            <span class="grow"><span class="title">{{ w.title }}</span><span class="meta">{{ w.get_workout_type_display }}, {{ w.date|date:"D j M" }}</span></span>
+            <span class="end"><span class="num">{{ w.duration_min|minutes }}</span><br><span class="meta">{{ w.calories_burned|num }} kcal</span></span>
+          </a></li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div class="empty"><strong>No workouts logged yet</strong><span>Your first one starts the streak.</span><a class="btn btn-primary btn-sm" href="{% url 'tracker:workout_new' %}">Log a workout</a></div>
+        {% endif %}
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>Weight, last 90 days</h2><a class="small" href="{% url 'tracker:body' %}">Log weight</a></div>
+        <div class="chart-box chart-box-sm"><canvas id="chart-weight" aria-label="Line chart of body weight over 90 days" role="img"></canvas></div>
+      </section>
+    </div>
+
+    <div class="stack">
+      <section class="panel">
+        <div class="panel-head"><h2>This week</h2><p>{{ week.minutes|minutes }} trained</p></div>
+        <div class="ring-row">
+          <div class="ring" style="--p: {{ week.pct }}; --c: var(--cobalt)"><div><span class="num">{{ week.done }}/{{ week.target }}</span><small>workouts</small></div></div>
+          <div class="macro-list">
+            <p class="small muted">Weekly goal from your settings. Change it any time.</p>
+            <canvas id="chart-weekly" height="110" aria-label="Training minutes per week for the last 8 weeks" role="img"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>Macros today</h2><a class="small" href="{% url 'tracker:nutrition' %}">Food diary</a></div>
+        <div class="macro-list">
+          {% for label, value, target, key in macros %}
+          <div>
+            <div class="macro-line"><strong>{{ label }}</strong><span>{{ value|num }} / {{ target }} g</span></div>
+            <div class="bar bar-{{ key }}{% if value|over:target %} bar-over{% endif %}"><span style="--w: {{ value|percent_of:target }}%"></span></div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="panel panel-flush">
+        <div class="panel-head"><h2>Goals</h2><a class="small" href="{% url 'tracker:goals' %}">Manage</a></div>
+        {% if goals %}
+        <div style="margin-top:.4rem">
+          {% for goal, p in goals %}
+          <div class="goal">
+            <div class="goal-top"><h3>{{ goal.title }}</h3>{% include "tracker/partials/goal_status.html" with status=p.status %}</div>
+            <div class="bar bar-lg"><span style="--w: {{ p.percent }}%"></span></div>
+            <div class="goal-figures"><span><span class="num">{{ p.current|smart }}</span> / {{ goal.target_value|smart }} {{ goal.unit }}</span><span>{{ p.percent }}%</span></div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty"><strong>No active goals</strong><span>Give yourself something to aim at.</span><a class="btn btn-secondary btn-sm" href="{% url 'tracker:goal_new' %}">Set a goal</a></div>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+</div>
+<script type="application/json" id="chart-data">{{ charts|safe }}</script>
+{% endblock %}
+{% block scripts %}<script src="{% static 'vendor/chart.umd.js' %}" defer></script>{% endblock %}

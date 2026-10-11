@@ -1,0 +1,112 @@
+{% extends "app.html" %}
+{% load fit %}
+{% block title %}Nutrition{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Food diary</h1><p>Target {{ target|num }} kcal a day, set from your profile.</p></div>
+  <nav class="daynav" aria-label="Choose day">
+    <a class="btn btn-ghost btn-sm btn-icon" href="?date={{ prev_day|date:'Y-m-d' }}" aria-label="Previous day">{% icon "chevron-left" %}</a>
+    <strong>{% if is_today %}Today{% else %}{{ day|date:"D j M" }}{% endif %}</strong>
+    <a class="btn btn-ghost btn-sm btn-icon" {% if next_day %}href="?date={{ next_day|date:'Y-m-d' }}"{% else %}aria-disabled="true"{% endif %} aria-label="Next day">{% icon "chevron-right" %}</a>
+  </nav>
+</div>
+
+<div class="grid grid-form">
+  <div class="stack">
+    <section class="panel">
+      <div class="ring-row">
+        <div class="ring" style="--p: {{ pct_calories }}; --c: {% if summary.calories_in > target %}var(--rose){% else %}var(--amber){% endif %}"><div><span class="num">{{ summary.calories_in|num }}</span><small>of {{ target|num }} kcal</small></div></div>
+        <div class="macro-list">
+          {% for label, value, mtarget, key in macros %}
+          <div>
+            <div class="macro-line"><strong>{{ label }}</strong><span>{{ value|num }} / {{ mtarget }} g</span></div>
+            <div class="bar bar-{{ key }}{% if value|over:mtarget %} bar-over{% endif %}"><span style="--w: {{ value|percent_of:mtarget }}%"></span></div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <section class="panel panel-flush">
+      {% for g in groups %}
+      <div class="meal-group">
+        <div class="meal-group-head">
+          <h3>{{ g.label }}{% if g.kcal %}<span>{{ g.kcal|num }} kcal</span>{% endif %}</h3>
+          <a class="btn btn-ghost btn-sm" href="{% url 'tracker:meal_new' %}?date={{ day|date:'Y-m-d' }}&type={{ g.key }}">{% icon "plus" %}Add</a>
+        </div>
+        {% for m in g.items %}
+        <div class="meal-item">
+          <div class="grow">
+            <strong>{{ m.name }}</strong>{% if m.quantity %} <span class="muted small">{{ m.quantity }}</span>{% endif %}
+            <div class="macros">P {{ m.protein_g|smart }} g, C {{ m.carbs_g|smart }} g, F {{ m.fat_g|smart }} g</div>
+          </div>
+          <span class="num">{{ m.calories }}</span>
+          <div class="row-actions">
+            <a class="btn btn-ghost btn-sm btn-icon" href="{% url 'tracker:meal_edit' m.pk %}" aria-label="Edit {{ m.name }}">{% icon "edit" %}</a>
+            <a class="btn btn-ghost btn-sm btn-icon" href="{% url 'tracker:meal_delete' m.pk %}" aria-label="Delete {{ m.name }}">{% icon "trash" %}</a>
+          </div>
+        </div>
+        {% empty %}
+        <p class="meal-empty">Nothing logged for {{ g.label|lower }}.</p>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </section>
+  </div>
+
+  <div class="stack">
+    <section class="panel">
+      <div class="panel-head"><h2>Quick add</h2><p>Pick a food to fill the form</p></div>
+      <form method="post" action="{% url 'tracker:meal_new' %}" class="form" novalidate data-food-form>
+        {% csrf_token %}
+        <input type="hidden" name="date" value="{{ day|date:'Y-m-d' }}">
+        <div class="form-row">
+          {% include "partials/field.html" with field=form.meal_type %}
+          {% include "partials/field.html" with field=form.calories %}
+        </div>
+        {% include "partials/field.html" with field=form.name %}
+        {% include "partials/field.html" with field=form.quantity hide_help=True %}
+        <div class="form-row">
+          {% include "partials/field.html" with field=form.protein_g %}
+          {% include "partials/field.html" with field=form.carbs_g %}
+          {% include "partials/field.html" with field=form.fat_g %}
+        </div>
+        <button class="btn btn-primary btn-block" type="submit">Add to {% if is_today %}today{% else %}{{ day|date:"j M" }}{% endif %}</button>
+      </form>
+      <details style="margin-top: 1rem">
+        <summary class="small" style="cursor:pointer; font-weight:700">Common Indian foods</summary>
+        <div class="food-grid" style="margin-top:.75rem">
+          {% for f in foods %}<button type="button" class="food-pick" data-food="{{ forloop.counter0 }}"><strong>{{ f.0 }}</strong><span>{{ f.1 }}, {{ f.2 }} kcal</span></button>{% endfor %}
+        </div>
+      </details>
+      <datalist id="food-suggestions">{% for f in foods %}<option value="{{ f.0 }}">{% endfor %}</datalist>
+    </section>
+
+    {% if recent %}
+    <section class="panel panel-flush">
+      <div class="panel-head"><h2>Your usual foods</h2><p>Adds to {{ quick_meal_type }}</p></div>
+      <ul class="list" style="margin-top:.5rem">
+        {% for r in recent %}
+        <li class="list-row">
+          <span class="grow"><span class="title">{{ r.name }}</span><span class="meta">{{ r.calories }} kcal{% if r.quantity %}, {{ r.quantity }}{% endif %}</span></span>
+          <form method="post" action="{% url 'tracker:meal_quick_add' %}">
+            {% csrf_token %}
+            <input type="hidden" name="date" value="{{ day|date:'Y-m-d' }}">
+            <input type="hidden" name="meal_type" value="{{ quick_meal_type }}">
+            <input type="hidden" name="name" value="{{ r.name }}">
+            <input type="hidden" name="quantity" value="{{ r.quantity }}">
+            <input type="hidden" name="calories" value="{{ r.calories }}">
+            <input type="hidden" name="protein_g" value="{{ r.protein_g }}">
+            <input type="hidden" name="carbs_g" value="{{ r.carbs_g }}">
+            <input type="hidden" name="fat_g" value="{{ r.fat_g }}">
+            <button class="btn btn-secondary btn-sm" type="submit">{% icon "plus" %}Log again</button>
+          </form>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+  </div>
+</div>
+<script type="application/json" id="food-data">{{ foods_json|safe }}</script>
+{% endblock %}

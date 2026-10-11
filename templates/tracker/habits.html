@@ -1,0 +1,74 @@
+{% extends "app.html" %}
+{% load fit static %}
+{% block title %}Habits{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Daily habits</h1><p>A ten-second check-in: steps, sleep, how you felt, and water through the day.</p></div></div>
+
+<div class="grid grid-form">
+  <div class="stack">
+    <section class="panel">
+      <div class="panel-head"><h2>Last 14 days</h2><p>Dashed lines show your targets</p></div>
+      <div class="grid grid-2">
+        <div><h3 class="small muted" style="margin-bottom:.5rem">Steps</h3><div class="chart-box chart-box-sm"><canvas id="chart-steps" role="img" aria-label="Steps per day for 14 days"></canvas></div></div>
+        <div><h3 class="small muted" style="margin-bottom:.5rem">Sleep (hours)</h3><div class="chart-box chart-box-sm"><canvas id="chart-sleep" role="img" aria-label="Hours of sleep per night for 14 days"></canvas></div></div>
+      </div>
+    </section>
+    <section class="panel panel-flush">
+      <div class="panel-head"><h2>Check-ins</h2><a class="small" href="{% url 'tracker:export' 'habits' %}">Export CSV</a></div>
+      <div class="table-wrap" style="margin-top:.5rem">
+        <table>
+          <thead><tr><th>Day</th><th class="num-cell">Steps</th><th class="num-cell">Sleep</th><th class="num-cell">Water</th><th>Mood</th><th><span class="sr-only">Actions</span></th></tr></thead>
+          <tbody>
+            {% for r in rows %}
+            <tr>
+              <td style="white-space:nowrap">{% if r.date == today %}<strong>Today</strong>{% else %}{{ r.date|date:"D j M" }}{% endif %}</td>
+              <td class="num-cell">{% if r.log %}<span class="{% if r.log.steps >= profile.steps_target %}delta-down{% endif %}">{{ r.log.steps|num }}</span>{% else %}<span class="muted">–</span>{% endif %}</td>
+              <td class="num-cell">{% if r.log.sleep_hours is not None and r.log %}{{ r.log.sleep_hours|smart }} h{% else %}<span class="muted">–</span>{% endif %}</td>
+              <td class="num-cell">{% if r.water %}{{ r.water|num }} ml{% else %}<span class="muted">–</span>{% endif %}</td>
+              <td>{% if r.log.mood %}{{ r.log.get_mood_display }}{% else %}<span class="muted">–</span>{% endif %}</td>
+              <td><div class="row-actions"><a class="btn btn-ghost btn-sm" href="?date={{ r.date|date:'Y-m-d' }}#check-in">{% if r.log %}Edit{% else %}Add{% endif %}</a></div></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="stack">
+    <section class="panel">
+      <div class="panel-head"><h2>Water today</h2></div>
+      <div class="ring-row">
+        <div class="ring" style="--p: {{ pct_water }}; --c: var(--teal)"><div><span class="num">{{ today_water|num }}</span><small>of {{ profile.water_target_ml|num }} ml</small></div></div>
+        <div class="stack" style="gap:.5rem; flex:1 1 200px">
+          <form method="post" action="{% url 'tracker:water_add' %}" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap:.4rem">
+            {% csrf_token %}<input type="hidden" name="next" value="{% url 'tracker:habits' %}">
+            <button class="btn btn-secondary btn-sm" name="amount_ml" value="150" type="submit">Cup, 150 ml</button>
+            <button class="btn btn-secondary btn-sm" name="amount_ml" value="250" type="submit">Glass, 250 ml</button>
+            <button class="btn btn-secondary btn-sm" name="amount_ml" value="500" type="submit">Bottle, 500 ml</button>
+            <button class="btn btn-secondary btn-sm" name="amount_ml" value="1000" type="submit">1 litre</button>
+          </form>
+          <form method="post" action="{% url 'tracker:water_undo' %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'tracker:habits' %}"><button class="link-btn small" type="submit">Undo last entry</button></form>
+        </div>
+      </div>
+    </section>
+    <section class="panel" id="check-in">
+      <div class="panel-head"><h2>Check-in for {% if day == today %}today{% else %}{{ day|date:"D j M" }}{% endif %}</h2></div>
+      <form method="post" class="form" novalidate>
+        {% csrf_token %}
+        {% include "partials/form_errors.html" %}
+        <div class="form-row">
+          {% include "partials/field.html" with field=form.date %}
+          {% include "partials/field.html" with field=form.steps %}
+        </div>
+        {% include "partials/field.html" with field=form.sleep_hours %}
+        {% include "partials/field.html" with field=form.mood segmented=True %}
+        {% include "partials/field.html" with field=form.notes %}
+        <button class="btn btn-primary btn-block" type="submit">Save check-in</button>
+      </form>
+    </section>
+  </div>
+</div>
+<script type="application/json" id="chart-data">{{ chart|safe }}</script>
+{% endblock %}
+{% block scripts %}<script src="{% static 'vendor/chart.umd.js' %}" defer></script>{% endblock %}

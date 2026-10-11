@@ -1,0 +1,19 @@
+{% extends "public.html" %}
+{% load fit %}
+{% block public %}
+<div class="auth">
+  <aside class="auth-side">
+    <a class="brand" href="{% url 'tracker:home' %}">{% include "partials/brand.html" %}<span class="brand-name">Momentum</span></a>
+    <div class="auth-side-body">
+      <h2>{% block side_title %}Small sessions, done often, beat big plans.{% endblock %}</h2>
+      <p>{% block side_text %}Log a workout, a meal or a glass of water in seconds and let the consistency grid show you how far you've come.{% endblock %}</p>
+    </div>
+    <p class="small" style="color: var(--band-muted)">Your data is private to your account.</p>
+  </aside>
+  <main class="auth-main">
+    <div class="auth-card">
+      {% block card %}{% endblock %}
+    </div>
+  </main>
+</div>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends "app.html" %}
+{% load fit %}
+{% block title %}{% if workout %}Edit workout{% else %}Log workout{% endif %}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>{% if workout %}Edit workout{% else %}Log a workout{% endif %}</h1><p>Leave calories blank and Momentum estimates them from the type, duration, intensity and your latest weight.</p></div>
+</div>
+<form method="post" novalidate>
+  {% csrf_token %}
+  <div class="stack" style="max-width: 900px">
+    <section class="panel form">
+      {% include "partials/form_errors.html" %}
+      {% include "partials/field.html" with field=form.title %}
+      <div class="form-row">
+        {% include "partials/field.html" with field=form.workout_type %}
+        {% include "partials/field.html" with field=form.date %}
+      </div>
+      <div class="form-row">
+        {% include "partials/field.html" with field=form.duration_min %}
+        {% include "partials/field.html" with field=form.intensity %}
+      </div>
+      <div class="form-row">
+        {% include "partials/field.html" with field=form.distance_km %}
+        {% include "partials/field.html" with field=form.calories_burned hide_help=True %}
+      </div>
+      {% include "partials/field.html" with field=form.notes %}
+    </section>
+
+    <section class="panel" data-formset="ex">
+      <div class="panel-head"><h2>Exercises</h2><p>For strength sessions</p></div>
+      {{ formset.management_form }}
+      {% if formset.non_form_errors %}<div class="non-field-errors">{% for e in formset.non_form_errors %}<p>{{ e }}</p>{% endfor %}</div>{% endif %}
+      <div class="table-wrap">
+        <table class="ex-table">
+          <thead><tr><th>Exercise</th><th>Sets</th><th>Reps</th><th>kg</th><th><span class="sr-only">Remove</span></th></tr></thead>
+          <tbody data-formset-body>
+            {% for f in formset %}
+            <tr class="ex-row" data-formset-row>
+              <td>{{ f.id }}{{ f.name }}{% for e in f.name.errors %}<div class="errors small" style="color:var(--rose)">{{ e }}</div>{% endfor %}</td>
+              <td>{{ f.sets }}</td><td>{{ f.reps }}</td><td>{{ f.weight_kg }}</td>
+              <td class="ex-remove">{{ f.DELETE }}<button type="button" class="btn btn-ghost btn-sm btn-icon" data-formset-remove aria-label="Remove exercise">{% icon "x" %}</button></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <template data-formset-template>
+        <tr class="ex-row" data-formset-row>
+          <td>{{ formset.empty_form.id }}{{ formset.empty_form.name }}</td>
+          <td>{{ formset.empty_form.sets }}</td><td>{{ formset.empty_form.reps }}</td><td>{{ formset.empty_form.weight_kg }}</td>
+          <td class="ex-remove">{{ formset.empty_form.DELETE }}<button type="button" class="btn btn-ghost btn-sm btn-icon" data-formset-remove aria-label="Remove exercise">{% icon "x" %}</button></td>
+        </tr>
+      </template>
+      <button type="button" class="btn btn-secondary btn-sm" data-formset-add style="margin-top:.75rem">{% icon "plus" %}Add exercise</button>
+      <datalist id="exercise-suggestions">{% for s in suggestions %}<option value="{{ s }}">{% endfor %}</datalist>
+    </section>
+  </div>
+  <div class="form-actions" style="margin-top: 1.25rem">
+    <button class="btn btn-primary btn-lg" type="submit">{% if workout %}Save changes{% else %}Save workout{% endif %}</button>
+    <a class="btn btn-ghost btn-lg" href="{% if workout %}{{ workout.get_absolute_url }}{% else %}{% url 'tracker:workouts' %}{% endif %}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

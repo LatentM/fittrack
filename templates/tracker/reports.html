@@ -1,0 +1,76 @@
+{% extends "app.html" %}
+{% load fit static %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Reports</h1><p>{{ report.start|date:"j M Y" }} to {{ report.end|date:"j M Y" }} ({{ report.days }} days), compared with the {{ report.days }} days before.</p></div>
+</div>
+
+<div class="panel" style="margin-bottom: 1.25rem; display:flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; justify-content: space-between">
+  <div class="chips" role="group" aria-label="Period">
+    <a class="chip" href="?range=7"{% if preset == "7" %} aria-current="true"{% endif %}>7 days</a>
+    <a class="chip" href="?range=30"{% if preset == "30" %} aria-current="true"{% endif %}>30 days</a>
+    <a class="chip" href="?range=90"{% if preset == "90" %} aria-current="true"{% endif %}>90 days</a>
+    <a class="chip" href="?range=365"{% if preset == "365" %} aria-current="true"{% endif %}>1 year</a>
+  </div>
+  <form method="get" style="display:flex; gap:.5rem; align-items:flex-end; flex-wrap: wrap">
+    <input type="hidden" name="range" value="custom">
+    <div class="field"><label for="{{ form.start.id_for_label }}">From</label>{{ form.start }}</div>
+    <div class="field"><label for="{{ form.end.id_for_label }}">To</label>{{ form.end }}</div>
+    <button class="btn btn-secondary" type="submit">Show</button>
+  </form>
+  {% if form.errors %}<div class="non-field-errors" style="width:100%">{% for e in form.non_field_errors %}<p>{{ e }}</p>{% endfor %}{% for f in form %}{% for e in f.errors %}<p>{{ f.label }}: {{ e }}</p>{% endfor %}{% endfor %}</div>{% endif %}
+</div>
+
+<dl class="stat-row" style="margin-bottom: 1.25rem">
+  {% include "tracker/partials/stat_cmp.html" with label="Workouts" value=report.workouts prev=previous.workouts %}
+  {% include "tracker/partials/stat_cmp.html" with label="Active days" value=report.active_days prev=previous.active_days %}
+  <div class="stat"><dt>Time trained</dt><dd>{{ report.minutes|minutes }}<span class="cmp">{{ previous.minutes|minutes }} before</span></dd></div>
+  {% include "tracker/partials/stat_cmp.html" with label="Calories burned" value=report.calories_burned prev=previous.calories_burned unit="kcal" %}
+  <div class="stat"><dt>Distance</dt><dd>{{ report.distance|smart }} <small>km</small><span class="cmp">{{ previous.distance|smart }} km before</span></dd></div>
+  <div class="stat"><dt>Avg calories eaten</dt><dd>{% if report.avg_calories_in %}{{ report.avg_calories_in|num }} <small>kcal/day</small>{% else %}–{% endif %}<span class="cmp">on days you logged food</span></dd></div>
+  <div class="stat"><dt>Avg protein</dt><dd>{% if report.avg_protein %}{{ report.avg_protein }} <small>g/day</small>{% else %}–{% endif %}</dd></div>
+  <div class="stat"><dt>Avg steps</dt><dd>{% if report.avg_steps %}{{ report.avg_steps|num }}{% else %}–{% endif %}</dd></div>
+  <div class="stat"><dt>Avg sleep</dt><dd>{% if report.avg_sleep %}{{ report.avg_sleep }} <small>h</small>{% else %}–{% endif %}</dd></div>
+  <div class="stat"><dt>Weight change</dt><dd>{% if report.weight_change is not None %}<span class="{% if report.weight_change < 0 %}delta-down{% elif report.weight_change > 0 %}delta-up{% endif %}">{{ report.weight_change|signed }}</span> <small>kg</small><span class="cmp">{{ report.weight_start|smart }} to {{ report.weight_end|smart }} kg</span>{% else %}–<span class="cmp">Needs two weigh-ins in range</span>{% endif %}</dd></div>
+</dl>
+
+<div class="grid grid-main">
+  <section class="panel">
+    <div class="panel-head"><h2>Calories by day</h2><p>Eaten vs burned in workouts</p></div>
+    <div class="chart-box"><canvas id="chart-report-energy" role="img" aria-label="Calories eaten and burned per day"></canvas></div>
+  </section>
+  <section class="panel">
+    <div class="panel-head"><h2>Where the time went</h2></div>
+    {% if report.breakdown %}
+    <div class="chart-box chart-box-sm"><canvas id="chart-report-types" role="img" aria-label="Training minutes by workout type"></canvas></div>
+    {% else %}<p class="muted">No workouts in this period.</p>{% endif %}
+  </section>
+</div>
+
+<div class="grid grid-main" style="margin-top: 1.25rem">
+  <section class="panel panel-flush">
+    <div class="panel-head"><h2>By workout type</h2></div>
+    {% if report.breakdown %}
+    <div class="table-wrap" style="margin-top:.5rem">
+      <table>
+        <thead><tr><th>Type</th><th class="num-cell">Sessions</th><th class="num-cell">Time</th><th class="num-cell">Calories</th></tr></thead>
+        <tbody>{% for b in report.breakdown %}<tr><td><span style="display:inline-flex; align-items:center; gap:.6rem"><span class="type-dot" data-type="{{ b.key }}" style="width:30px;height:30px;border-radius:9px">{% icon b.key|type_icon %}</span>{{ b.type }}</span></td><td class="num-cell">{{ b.count }}</td><td class="num-cell">{{ b.minutes|minutes }}</td><td class="num-cell">{{ b.kcal|num }}</td></tr>{% endfor %}</tbody>
+      </table>
+    </div>
+    {% else %}<div class="empty"><span>Log workouts to see a breakdown here.</span></div>{% endif %}
+  </section>
+  <section class="panel">
+    <div class="panel-head"><h2>Export to CSV</h2><p>Opens in Excel or Google Sheets</p></div>
+    <div class="stack" style="gap:.5rem">
+      <a class="btn btn-secondary" href="{% url 'tracker:export' 'workouts' %}?{{ export_query }}">{% icon "download" %}Workouts</a>
+      <a class="btn btn-secondary" href="{% url 'tracker:export' 'meals' %}?{{ export_query }}">{% icon "download" %}Meals</a>
+      <a class="btn btn-secondary" href="{% url 'tracker:export' 'measurements' %}?{{ export_query }}">{% icon "download" %}Body measurements</a>
+      <a class="btn btn-secondary" href="{% url 'tracker:export' 'habits' %}?{{ export_query }}">{% icon "download" %}Daily check-ins</a>
+    </div>
+    <p class="small muted" style="margin-top: .9rem">Exports cover the period selected above.</p>
+  </section>
+</div>
+<script type="application/json" id="chart-data">{{ chart|safe }}</script>
+{% endblock %}
+{% block scripts %}<script src="{% static 'vendor/chart.umd.js' %}" defer></script>{% endblock %}

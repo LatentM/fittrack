@@ -1,0 +1,44 @@
+{% extends "app.html" %}
+{% load fit %}
+{% block title %}Goals{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Goals</h1><p>Progress updates on its own from what you log. Goals with a deadline also show whether you're keeping pace.</p></div>
+  <div class="page-actions"><a class="btn btn-primary" href="{% url 'tracker:goal_new' %}">{% icon "plus" %}New goal</a></div>
+</div>
+
+<div class="stack">
+  <section class="panel panel-flush">
+    <div class="panel-head"><h2>In progress</h2><p>{{ active|length }} active</p></div>
+    {% if active %}
+    <div style="margin-top:.4rem">
+      {% for goal, p in active %}{% include "tracker/partials/goal_row.html" %}{% endfor %}
+    </div>
+    {% else %}
+    <div class="empty"><strong>No goals in progress</strong><span>Try “Run 50 km this month” or “Reach 72 kg by March”.</span><a class="btn btn-primary btn-sm" href="{% url 'tracker:goal_new' %}">Set a goal</a></div>
+    {% endif %}
+  </section>
+
+  {% if done %}
+  <section class="panel panel-flush">
+    <div class="panel-head"><h2>Achieved</h2><p>{{ done|length }} completed</p></div>
+    <div style="margin-top:.4rem">{% for goal, p in done %}{% include "tracker/partials/goal_row.html" %}{% endfor %}</div>
+  </section>
+  {% endif %}
+
+  {% if archived %}
+  <details class="panel">
+    <summary style="cursor:pointer; font-weight:700">Archived goals ({{ archived|length }})</summary>
+    <ul class="list" style="margin-top:.75rem">
+      {% for goal in archived %}
+      <li class="list-row" style="padding-left:0; padding-right:0">
+        <span class="grow"><span class="title">{{ goal.title }}</span><span class="meta">{{ goal.get_kind_display }}, target {{ goal.target_value|smart }} {{ goal.unit }}</span></span>
+        <form method="post" action="{% url 'tracker:goal_archive' goal.pk %}">{% csrf_token %}<button class="btn btn-secondary btn-sm" type="submit">Restore</button></form>
+        <a class="btn btn-ghost btn-sm btn-icon" href="{% url 'tracker:goal_delete' goal.pk %}" aria-label="Delete {{ goal.title }}">{% icon "trash" %}</a>
+      </li>
+      {% endfor %}
+    </ul>
+  </details>
+  {% endif %}
+</div>
+{% endblock %}

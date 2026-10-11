@@ -1,0 +1,38 @@
+{% extends "app.html" %}
+{% load fit %}
+{% block title %}{% if meal %}Edit food{% else %}Log food{% endif %}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{% if meal %}Edit {{ meal.name }}{% else %}Log food{% endif %}</h1><p>Pick a common food to fill in typical values, then adjust them to match your portion.</p></div></div>
+<div class="grid grid-form">
+  <form method="post" class="panel form" novalidate data-food-form>
+    {% csrf_token %}
+    {% include "partials/form_errors.html" %}
+    <div class="form-row">
+      {% include "partials/field.html" with field=form.date %}
+      {% include "partials/field.html" with field=form.meal_type %}
+    </div>
+    <div class="form-row">
+      {% include "partials/field.html" with field=form.name %}
+      {% include "partials/field.html" with field=form.quantity %}
+    </div>
+    {% include "partials/field.html" with field=form.calories %}
+    <div class="form-row">
+      {% include "partials/field.html" with field=form.protein_g %}
+      {% include "partials/field.html" with field=form.carbs_g %}
+      {% include "partials/field.html" with field=form.fat_g %}
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary btn-lg" type="submit">{% if meal %}Save changes{% else %}Log food{% endif %}</button>
+      <a class="btn btn-ghost btn-lg" href="{% url 'tracker:nutrition' %}">Cancel</a>
+    </div>
+  </form>
+  <section class="panel">
+    <div class="panel-head"><h2>Common Indian foods</h2></div>
+    <div class="food-grid">
+      {% for f in foods %}<button type="button" class="food-pick" data-food="{{ forloop.counter0 }}"><strong>{{ f.0 }}</strong><span>{{ f.1 }}, {{ f.2 }} kcal</span></button>{% endfor %}
+    </div>
+  </section>
+</div>
+<datalist id="food-suggestions">{% for f in foods %}<option value="{{ f.0 }}">{% endfor %}</datalist>
+<script type="application/json" id="food-data">{{ foods_json|safe }}</script>
+{% endblock %}

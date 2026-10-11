@@ -1,0 +1,19 @@
+{% load fit %}
+<div class="goal">
+  <div class="goal-top">
+    <div>
+      <h3>{{ goal.title }}</h3>
+      <p class="small muted">{{ goal.get_kind_display }}{% if goal.deadline %}, by {{ goal.deadline|date:"j M Y" }}{% if p.days_left is not None and p.days_left >= 0 and not goal.achieved_at %} ({{ p.days_left }} day{{ p.days_left|pluralize }} left){% endif %}{% endif %}{% if goal.achieved_at %}, achieved {{ goal.achieved_at|date:"j M Y" }}{% endif %}</p>
+    </div>
+    <div style="display:flex; gap:.4rem; align-items:center; flex-wrap: wrap; justify-content: flex-end">
+      {% include "tracker/partials/goal_status.html" with status=p.status %}
+      <a class="btn btn-ghost btn-sm btn-icon" href="{% url 'tracker:goal_edit' goal.pk %}" aria-label="Edit {{ goal.title }}">{% icon "edit" %}</a>
+      <form method="post" action="{% url 'tracker:goal_archive' goal.pk %}">{% csrf_token %}<button class="btn btn-ghost btn-sm btn-icon" type="submit" aria-label="Archive {{ goal.title }}">{% icon "archive" %}</button></form>
+    </div>
+  </div>
+  <div class="bar bar-lg{% if p.status == 'achieved' %} bar-teal{% endif %}"><span style="--w: {{ p.percent }}%"></span></div>
+  <div class="goal-figures">
+    <span>{% if goal.achieved_at %}Reached {{ goal.target_value|smart }} {{ goal.unit }}{% elif goal.kind == "weight" %}Now <span class="num">{{ p.current|smart }}</span> kg, started at {{ goal.start_value|smart }}, aiming for {{ goal.target_value|smart }}{% else %}<span class="num">{{ p.current|smart }}</span> of {{ goal.target_value|smart }} {{ goal.unit }}{% endif %}</span>
+    <span>{{ p.percent }}%</span>
+  </div>
+</div>

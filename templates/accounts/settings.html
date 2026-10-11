@@ -1,0 +1,67 @@
+{% extends "app.html" %}
+{% load fit %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Settings</h1><p>Your details, daily targets and account security.</p></div></div>
+<div class="grid" style="grid-template-columns: 200px minmax(0, 1fr); align-items: start;" data-collapse-grid>
+  <nav class="settings-nav" aria-label="Settings sections">
+    <a href="#profile">Profile</a><a href="#targets">Targets</a><a href="#security">Security</a><a href="#danger">Delete account</a>
+  </nav>
+  <div class="stack">
+    <form method="post" class="stack" novalidate>
+      {% csrf_token %}
+      <section class="panel" id="profile">
+        <div class="panel-head"><h2>Profile</h2></div>
+        <div class="form">
+          {% include "partials/form_errors.html" with form=user_form %}
+          {% include "partials/form_errors.html" with form=profile_form %}
+          <div class="form-row">
+            {% include "partials/field.html" with field=user_form.first_name %}
+            {% include "partials/field.html" with field=user_form.last_name %}
+          </div>
+          {% include "partials/field.html" with field=user_form.email %}
+          <div class="form-row">
+            {% include "partials/field.html" with field=profile_form.date_of_birth %}
+            {% include "partials/field.html" with field=profile_form.sex %}
+            {% include "partials/field.html" with field=profile_form.height_cm hide_help=True %}
+          </div>
+          <div class="form-row">
+            {% include "partials/field.html" with field=profile_form.activity_level %}
+            {% include "partials/field.html" with field=profile_form.objective %}
+          </div>
+        </div>
+      </section>
+      <section class="panel" id="targets">
+        <div class="panel-head"><h2>Daily targets</h2>
+          <p>{% if profile.tdee %}You burn about {{ profile.tdee|num }} kcal a day (BMR {{ profile.bmr|num }} kcal).{% else %}Add your date of birth, sex, height and weight to get a calculated target.{% endif %}</p></div>
+        <div class="form">
+          <div class="form-row">
+            {% include "partials/field.html" with field=profile_form.calorie_target %}
+            {% include "partials/field.html" with field=profile_form.weekly_workout_target %}
+          </div>
+          <div class="form-row">
+            {% include "partials/field.html" with field=profile_form.steps_target %}
+            {% include "partials/field.html" with field=profile_form.water_target_ml %}
+            {% include "partials/field.html" with field=profile_form.sleep_target_hours %}
+          </div>
+          <div class="form-actions"><button class="btn btn-primary" type="submit">Save settings</button><span class="muted small">Current food target: {{ profile.daily_calorie_target|num }} kcal</span></div>
+        </div>
+      </section>
+    </form>
+    <section class="panel" id="security">
+      <div class="panel-head"><h2>Security</h2></div>
+      <dl class="kv" style="max-width: 460px; margin-bottom: 1.1rem">
+        <dt>Username</dt><dd>{{ user.username }}</dd>
+        <dt>Member since</dt><dd>{{ user.date_joined|date:"j M Y" }}</dd>
+        <dt>Last sign-in</dt><dd>{{ user.last_login|date:"j M Y, H:i"|default:"–" }}</dd>
+      </dl>
+      <a class="btn btn-secondary" href="{% url 'accounts:password_change' %}">{% icon "lock" %}Change password</a>
+    </section>
+    <section class="panel danger-zone" id="danger">
+      <div class="panel-head"><h2>Delete account</h2></div>
+      <p class="muted" style="margin-bottom: 1rem">Deleting removes your profile and every workout, meal, measurement and goal. Export your data from Reports first if you want a copy.</p>
+      <a class="btn btn-secondary" href="{% url 'accounts:delete' %}" style="color: var(--rose)">{% icon "trash" %}Delete my account</a>
+    </section>
+  </div>
+</div>
+{% endblock %}
